@@ -6,6 +6,8 @@
 
 uint8_t VGA_8158_GAMEPAL[769];
 
+static int num_colors = 0;
+
 void fskip(FILE *fp, int num_bytes)
 {
    int i;
@@ -18,7 +20,7 @@ static void Load_PAL(const char *file)
 {
 	FILE *fp;
 	int32_t index;
-	int width, height, num_colors;
+	int width, height;
 
 	/* open the file */
 	if ((fp = fopen(file,"rb")) == NULL)
@@ -93,7 +95,7 @@ uint16_t RGB2PAL(int r, int g, int b, FILE* f)
 	ui___V = (ui___V + 8 ) >> 4;
 	ui___P = (ui___Y << 8 ) + (ui___U << 4) + ui___V;	
 	
-	fprintf(f, "0x%x, \n", ui___P);
+	fprintf(f, "0x%x,", ui___P);
         
 	return (uint16_t) ui___P;
 }
@@ -102,6 +104,7 @@ uint16_t RGB2PAL(int r, int g, int b, FILE* f)
 int main(int argc, char* argv[])
 {
 	int index;
+	int counter = 0;
 	FILE* fp;
 	if (argc < 3)
 	{
@@ -110,12 +113,19 @@ int main(int argc, char* argv[])
 	}
 	
 	Load_PAL(argv[1]);
-	
 	fp = fopen(argv[2], "w");
+	fprintf(fp, "unsigned short mypal[%d] = {\n", num_colors);
 	for(index=0;index<256;index++)
 	{
 		RGB2PAL(VGA_8158_GAMEPAL[(index*3)+0], VGA_8158_GAMEPAL[(index*3)+1], VGA_8158_GAMEPAL[(index*3)+2], fp);
+		counter++;
+		if (counter > 7) 
+		{
+			fprintf(fp, "\n");
+			counter = 0;
+		}
 	}
+	fprintf(fp, "\n};\n");
 	fclose(fp);
 	
 }
